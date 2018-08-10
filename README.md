@@ -1,10 +1,12 @@
-#Purpose
+# Purpose
 The purpose of this project is to provide a practice area for learning to use a mocking framework in C#.
 #Instructions
 Fork this repository into your own account.
+You will be implementing the `OrderService.PlaceOrder` method.
 Using your favorite unit test library and mocking framework, write tests for the following requirements.
 Do not implement any of the existing interfaces.
-Any implementation code you write should exist primarily in the methods being tested.
+Any implementation code you write should exist only in the methods under test or other concrete classes (e.g., not interfaces).
+
 # TestCases
 ## OrderService.PlaceOrder
 ### Order is valid if
