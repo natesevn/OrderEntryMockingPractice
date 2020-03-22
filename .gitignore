@@ -3,3 +3,9 @@
 ################################################################################
 
 /.vs/OrderEntryMockingPractice/v16/Server/sqlite3
+/.vs/OrderEntryMockingPractice/v16
+/packages
+/OrderEntryMockingPracticeTests/bin/Debug
+/OrderEntryMockingPracticeTests/obj/Debug
+/OrderEntryMockingPractice/bin/Debug
+/OrderEntryMockingPractice/obj/Debug
