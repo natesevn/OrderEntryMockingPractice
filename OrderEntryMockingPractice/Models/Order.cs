@@ -13,7 +13,7 @@ namespace OrderEntryMockingPractice.Models
         public int? CustomerId { get; set; }
         public List<OrderItem> OrderItems { get; set; }
 
-        public bool hasNoDuplicateSku()
+        public bool HasNoDuplicateSku()
         {
             int itemNo = OrderItems.Count();
             int uniqueItems = OrderItems.Select(item => item.Product.Sku).Distinct().Count();

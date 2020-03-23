@@ -1,5 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using OrderEntryMockingPractice.Models;
+using OrderEntryMockingPractice.Services;
 using System;
 using System.Linq;
 
@@ -18,9 +20,18 @@ namespace OrderEntryMockingPracticeTests
         private Product product2;
         private Product product3;
 
+        private Mock<IProductRepository> _mockedProductRepo;
+
+        private OrderService _orderService;
+
         [TestInitialize]
         public void SetupProductsAndOrders()
         {
+            // Setup Mocked Interfaces
+            _mockedProductRepo = new Mock<IProductRepository>();
+
+            _orderService = new OrderService();
+
             order = new Order();
 
             product1 = new Product
@@ -52,29 +63,55 @@ namespace OrderEntryMockingPracticeTests
         }
 
         [TestMethod]
-        public void OrderItemsHaveUniqueSku()
+        public void NoExceptionIfOrderItemsHaveUniqueSku()
         {            
             // Act
             order.OrderItems.Add(order1);
-            order.OrderItems.Add(order2);
+            order.OrderItems.Add(order2); 
 
-            bool hasNoDuplicates = order.hasNoDuplicateSku();
-
-            // Assert
-            Assert.AreEqual(hasNoDuplicates, true, "Products with different SKUs considered same.");
+            try
+            {
+                _orderService.PlaceOrder(order);
+            }
+            catch(ArgumentException ae)
+            {
+                // Assert
+                Assert.Fail("Expected no exception.");
+            }
         }
 
         [TestMethod]
-        public void OrderItemsHaveDuplicateSku()
+        public void ExceptionIfOrderItemsHaveDuplicateSku()
         {
             // Act
             order.OrderItems.Add(order1);
+            order.OrderItems.Add(order2);
             order.OrderItems.Add(order3);
 
-            bool hasNoDuplicates = order.hasNoDuplicateSku();
+            try
+            {
+                _orderService.PlaceOrder(order);
+                Assert.Fail("The expected exception was not thrown.");
+            }
+            catch (ArgumentException ae)
+            {
+                // Assert
+                Assert.AreEqual(ae.Message, OrderService.DuplicateSkuError);
+            }
+        }
+
+        [TestMethod]
+        public void OrderProductsInStock()
+        {
+            // Arrange
+            _mockedProductRepo.Setup(x => x.IsInStock(It.IsAny<string>())).Returns(true);
+            var test = _mockedProductRepo.Object;
+
+            // Act
+            var isInStock = test.IsInStock(order1.Product.Sku);
 
             // Assert
-            Assert.AreEqual(hasNoDuplicates, false, "Products with same SKUs considered different.");
+            Assert.AreEqual(isInStock, true);
         }
     }
 }
