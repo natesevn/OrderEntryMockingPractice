@@ -32,7 +32,7 @@ namespace OrderEntryMockingPracticeTests
         // Services
         private OrderService _orderService;
 
-        private Product CreateProduct(string sku, int price)
+        private Product CreateProduct(string sku, decimal price)
         {
             return new Product
             {
@@ -41,7 +41,7 @@ namespace OrderEntryMockingPracticeTests
             };
         }
 
-        private OrderItem CreateOrderItem(Product product, int quantity)
+        private OrderItem CreateOrderItem(Product product, decimal quantity)
         {
             return new OrderItem
             {
@@ -57,8 +57,8 @@ namespace OrderEntryMockingPracticeTests
         private Order CreateOrder(
             int customerId,
             string skuOne, string skuTwo,
-            int priceOne = 0, int priceTwo = 0,
-            int quantityOne = 0, int quantityTwo = 0)
+            decimal priceOne = 0, decimal priceTwo = 0,
+            decimal quantityOne = 0, decimal quantityTwo = 0)
         {
             Product product1 = CreateProduct(skuOne, priceOne);
             Product product2 = CreateProduct(skuTwo, priceTwo);
@@ -130,7 +130,7 @@ namespace OrderEntryMockingPracticeTests
                 SkuUniqueOne, SkuUniqueTwo,
                 10, 20, 2, 1);
 
-            int expectedNetTotal = (10 * 2) + (20 * 1);
+            decimal expectedNetTotal = (10 * 2) + (20 * 1);
 
             try
             {

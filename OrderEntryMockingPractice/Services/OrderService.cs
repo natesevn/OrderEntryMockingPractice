@@ -21,27 +21,34 @@ namespace OrderEntryMockingPractice.Services
 
         public OrderSummary PlaceOrder(Order order)
         {
-            // Check order properties
+            // Check duplicate SKU
             if (order.HasNoDuplicateSku() == false)
             {
                 throw new ArgumentException(DuplicateSkuError);
             }
 
+            // Check product stock and calculate net total
+            decimal netTotal = 0;
             foreach(OrderItem items in order.OrderItems)
             {
                 if(_productRepo.IsInStock(items.Product.Sku) == false)
                 {
                     throw new ArgumentException(NoStockError);
                 }
+
+                netTotal += items.Product.Price * items.Quantity;
             }
 
             // All checks pass, get confirmation properties
             OrderConfirmation confirmation = _fulfillmentService.Fulfill(order);
-            
+
             // Create new summary with required information filled in
             OrderSummary summary = new OrderSummary();
-            summary.OrderId = confirmation.OrderId;
 
+            summary.OrderId = confirmation.OrderId;
+            summary.NetTotal = netTotal;
+
+           
             return summary;
         }
     }
