@@ -4,6 +4,7 @@ using OrderEntryMockingPractice.Models;
 using OrderEntryMockingPractice.Services;
 using System;
 using System.Collections.Generic;
+using System.Data.Odbc;
 using System.Linq;
 
 namespace OrderEntryMockingPracticeTests
@@ -37,6 +38,7 @@ namespace OrderEntryMockingPracticeTests
         private Mock<IOrderFulfillmentService> _mockedFulfillmentService;
         private Mock<ICustomerRepository> _mockedCustomerRepo;
         private Mock<ITaxRateService> _mockedTaxService;
+        private Mock<IEmailService> _mockedEmailService;
         
         // Services
         private OrderService _orderService;
@@ -123,6 +125,9 @@ namespace OrderEntryMockingPracticeTests
                     UsTax
                 });
 
+            _mockedEmailService = new Mock<IEmailService>();
+            _mockedEmailService.Setup(x => x.SendOrderConfirmationEmail(It.IsAny<int>(), It.IsAny<int>()));
+
             _orderService = new OrderService(
                 _mockedProductRepo.Object, _mockedFulfillmentService.Object,
                 _mockedCustomerRepo.Object, _mockedTaxService.Object);
@@ -136,7 +141,10 @@ namespace OrderEntryMockingPracticeTests
             try
             {
                 _orderService.PlaceOrder(order);
-                _mockedFulfillmentService.Verify(x => x.Fulfill(order), Times.Once());
+                // Make sure fulfillment service is called on the right order
+                _mockedFulfillmentService.Verify(x => x.Fulfill(
+                    It.Is<Order>(y => y.OrderItems == order.OrderItems)), 
+                    Times.Once());
             }
             catch(ArgumentException ae)
             {
@@ -211,6 +219,24 @@ namespace OrderEntryMockingPracticeTests
             {
                 OrderSummary summary = _orderService.PlaceOrder(order);
                 Assert.AreEqual(expectedOrderTotal, summary.Total, "Order total not calculated properly");
+            }
+            catch (ArgumentException ae)
+            {
+                Assert.Fail("Expected no exception but received: " + ae.Message);
+            }
+        }
+
+        [TestMethod]
+        public void EmailIsSentToCorrectCustomer()
+        {
+            Order order = CreateOrder(CustomerId, SkuUniqueOne, SkuUniqueTwo);
+
+            try
+            {
+                OrderSummary summary = _orderService.PlaceOrder(order);
+                _mockedEmailService.Verify(x => x.SendOrderConfirmationEmail(
+                    It.Is<int>(custId => custId == order.CustomerId), It.Is<int>(ordId => ordId == summary.OrderId)),
+                    Times.Once());
             }
             catch (ArgumentException ae)
             {
