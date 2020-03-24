@@ -81,6 +81,7 @@ namespace OrderEntryMockingPracticeTests
                 item1,
                 item2 
             };
+            order.CustomerId = customerId;
 
             return order;        
         }
@@ -122,7 +123,9 @@ namespace OrderEntryMockingPracticeTests
                     UsTax
                 });
 
-            _orderService = new OrderService(_mockedProductRepo.Object, _mockedFulfillmentService.Object);
+            _orderService = new OrderService(
+                _mockedProductRepo.Object, _mockedFulfillmentService.Object,
+                _mockedCustomerRepo.Object, _mockedTaxService.Object);
         }
        
         [TestMethod]
