@@ -130,7 +130,8 @@ namespace OrderEntryMockingPracticeTests
 
             _orderService = new OrderService(
                 _mockedProductRepo.Object, _mockedFulfillmentService.Object,
-                _mockedCustomerRepo.Object, _mockedTaxService.Object);
+                _mockedCustomerRepo.Object, _mockedTaxService.Object,
+                _mockedEmailService.Object);
         }
        
         [TestMethod]

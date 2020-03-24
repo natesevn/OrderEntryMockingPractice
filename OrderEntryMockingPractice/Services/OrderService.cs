@@ -15,17 +15,20 @@ namespace OrderEntryMockingPractice.Services
         private IOrderFulfillmentService _fulfillmentService;
         private ICustomerRepository _customerService;
         private ITaxRateService _taxService;
+        private IEmailService _emailService;
 
         public OrderService(
             IProductRepository productRepo,
             IOrderFulfillmentService fulfillmentService,
             ICustomerRepository customerService,
-            ITaxRateService taxService)
+            ITaxRateService taxService,
+            IEmailService emailService)
         {
             _productRepo = productRepo;
             _fulfillmentService = fulfillmentService;
             _customerService = customerService;
             _taxService = taxService;
+            _emailService = emailService;
         }
 
         public OrderSummary PlaceOrder(Order order)
@@ -67,13 +70,15 @@ namespace OrderEntryMockingPractice.Services
             OrderConfirmation confirmation = _fulfillmentService.Fulfill(order);
 
             // Create new summary with required information filled in
-            OrderSummary summary = new OrderSummary();
+            OrderSummary summary = new OrderSummary
+            {
+                OrderId = confirmation.OrderId,
+                OrderNumber = confirmation.OrderNumber,
+                NetTotal = netTotal,
+                Total = total
+            };
 
-            summary.OrderId = confirmation.OrderId;
-            summary.OrderNumber = confirmation.OrderNumber;
-            summary.NetTotal = netTotal;
-            summary.Total = total;
-
+            _emailService.SendOrderConfirmationEmail(customerId, summary.OrderId);
            
             return summary;
         }
