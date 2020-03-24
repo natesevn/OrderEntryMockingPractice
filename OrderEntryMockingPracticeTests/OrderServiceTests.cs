@@ -19,7 +19,9 @@ namespace OrderEntryMockingPracticeTests
         // Signifies product is out of stock
         private const string SkuOutOfStock = "outStock";
 
-        private const int CustomerId = 777;
+        private const int CustomerId = 1;
+
+        private const int OrderId = 2;
         
         // Mocked interfaces
         private Mock<IProductRepository> _mockedProductRepo;
@@ -30,17 +32,16 @@ namespace OrderEntryMockingPracticeTests
         // Services
         private OrderService _orderService;
 
-        private Product CreateProduct(string name, string sku, int price = 0)
+        private Product CreateProduct(string sku, int price)
         {
             return new Product
             {
-                Name = name,
                 Sku = sku,
                 Price = price
             };
         }
 
-        private OrderItem CreateOrderItem(Product product, int quantity = 0)
+        private OrderItem CreateOrderItem(Product product, int quantity)
         {
             return new OrderItem
             {
@@ -49,16 +50,21 @@ namespace OrderEntryMockingPracticeTests
             };
         }
 
+        /*
+         * Create full order given customer id and 2 products 
+         * Price and quantity optional for testing purposes
+         */
         private Order CreateOrder(
             int customerId,
             string skuOne, string skuTwo,
-            string productNameOne = "prodOne", string productNameTwo = "prodTwo")
+            int priceOne = 0, int priceTwo = 0,
+            int quantityOne = 0, int quantityTwo = 0)
         {
-            Product product1 = CreateProduct(productNameOne, skuOne);
-            Product product2 = CreateProduct(productNameTwo, skuTwo);
+            Product product1 = CreateProduct(skuOne, priceOne);
+            Product product2 = CreateProduct(skuTwo, priceTwo);
 
-            OrderItem item1 = CreateOrderItem(product1);
-            OrderItem item2 = CreateOrderItem(product2);
+            OrderItem item1 = CreateOrderItem(product1, quantityOne);
+            OrderItem item2 = CreateOrderItem(product2, quantityTwo);
 
             Order order = new Order();
             order.OrderItems = new List<OrderItem>
@@ -73,8 +79,6 @@ namespace OrderEntryMockingPracticeTests
         [TestInitialize]
         public void SetupProductsAndOrders()
         {
-            Random rand = new Random();
-            
             // Setup Mocked Interfaces
 
             _mockedProductRepo = new Mock<IProductRepository>();
@@ -88,8 +92,8 @@ namespace OrderEntryMockingPracticeTests
             _mockedFulfillmentService.Setup(x => x.Fulfill(It.IsAny<Order>()))
                 .Returns((Order a) => new OrderConfirmation
                 {
-                    OrderId = rand.Next(),
-                    CustomerId = a.CustomerId ?? rand.Next()
+                    OrderId = OrderId, 
+                    CustomerId = a.CustomerId ?? 1
                 });
 
             _mockedCustomerRepo = new Mock<ICustomerRepository>();
@@ -114,6 +118,26 @@ namespace OrderEntryMockingPracticeTests
                 _mockedFulfillmentService.Verify(x => x.Fulfill(order), Times.Once());
             }
             catch(ArgumentException ae)
+            {
+                Assert.Fail("Expected no exception but received: " + ae.Message);
+            }
+        }
+
+        [TestMethod]
+        public void CorrectNetTotalCalculation()
+        {
+            Order order = CreateOrder(CustomerId,
+                SkuUniqueOne, SkuUniqueTwo,
+                10, 20, 2, 1);
+
+            int expectedNetTotal = (10 * 2) + (20 * 1);
+
+            try
+            {
+                OrderSummary summary = _orderService.PlaceOrder(order);
+                Assert.AreEqual(expectedNetTotal, summary.NetTotal, "Net total not calculated properly");
+            }
+            catch (ArgumentException ae)
             {
                 Assert.Fail("Expected no exception but received: " + ae.Message);
             }
