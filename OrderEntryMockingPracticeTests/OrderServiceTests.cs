@@ -94,13 +94,14 @@ namespace OrderEntryMockingPracticeTests
         }
        
         [TestMethod]
-        public void NoExceptionIfOrderItemsHaveUniqueSkuAndInStock()
+        public void ValidOrderPassedToFulfillmentService()
         {
             Order order = CreateOrder(customerId, SkuUniqueOne, SkuUniqueTwo);
             
             try
             {
                 _orderService.PlaceOrder(order);
+                _mockedFulfillmentService.Verify(x => x.Fulfill(order), Times.Once());
             }
             catch(ArgumentException ae)
             {
