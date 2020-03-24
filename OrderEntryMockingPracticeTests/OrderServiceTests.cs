@@ -19,21 +19,24 @@ namespace OrderEntryMockingPracticeTests
         // Signifies product is out of stock
         private const string SkuOutOfStock = "outStock";
 
-        private const int customerId = 777;
+        private const int CustomerId = 777;
         
         // Mocked interfaces
         private Mock<IProductRepository> _mockedProductRepo;
         private Mock<IOrderFulfillmentService> _mockedFulfillmentService;
+        private Mock<ICustomerRepository> _mockedCustomerRepo;
+        private Mock<ITaxRateService> _mockedTaxService;
         
         // Services
         private OrderService _orderService;
 
-        private Product CreateProduct(string name, string sku)
+        private Product CreateProduct(string name, string sku, int price = 0)
         {
             return new Product
             {
                 Name = name,
-                Sku = sku
+                Sku = sku,
+                Price = price
             };
         }
 
@@ -88,6 +91,13 @@ namespace OrderEntryMockingPracticeTests
                     OrderId = rand.Next(),
                     CustomerId = a.CustomerId ?? rand.Next()
                 });
+
+            _mockedCustomerRepo = new Mock<ICustomerRepository>();
+            _mockedCustomerRepo.Setup(x => x.Get(It.IsAny<int>()))
+                .Returns((int id) => new Customer
+                {
+                    CustomerId = id,
+                });
                
 
             _orderService = new OrderService(_mockedProductRepo.Object, _mockedFulfillmentService.Object);
@@ -96,7 +106,7 @@ namespace OrderEntryMockingPracticeTests
         [TestMethod]
         public void ValidOrderPassedToFulfillmentService()
         {
-            Order order = CreateOrder(customerId, SkuUniqueOne, SkuUniqueTwo);
+            Order order = CreateOrder(CustomerId, SkuUniqueOne, SkuUniqueTwo);
             
             try
             {
@@ -112,7 +122,7 @@ namespace OrderEntryMockingPracticeTests
         [TestMethod]
         public void ExceptionIfOrderItemsHaveDuplicateSku()
         {
-            Order order = CreateOrder(customerId, SkuUniqueOne, SkuDuplicateOne);
+            Order order = CreateOrder(CustomerId, SkuUniqueOne, SkuDuplicateOne);
 
             try
             {
@@ -128,7 +138,7 @@ namespace OrderEntryMockingPracticeTests
         [TestMethod]
         public void ExceptionIfProductsNotInStock()
         {
-            Order order = CreateOrder(customerId, SkuOutOfStock, SkuUniqueOne);
+            Order order = CreateOrder(CustomerId, SkuOutOfStock, SkuUniqueOne);
 
             try
             {
