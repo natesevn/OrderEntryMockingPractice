@@ -18,9 +18,12 @@ namespace OrderEntryMockingPracticeTests
         private const string SkuDuplicateOne = SkuUniqueOne;
         // Signifies product is out of stock
         private const string SkuOutOfStock = "outStock";
+
+        private const int customerId = 777;
         
         // Mocked interfaces
         private Mock<IProductRepository> _mockedProductRepo;
+        private Mock<IOrderFulfillmentService> _mockedFulfillmentService;
         
         // Services
         private OrderService _orderService;
@@ -44,6 +47,7 @@ namespace OrderEntryMockingPracticeTests
         }
 
         private Order CreateOrder(
+            int customerId,
             string skuOne, string skuTwo,
             string productNameOne = "prodOne", string productNameTwo = "prodTwo")
         {
@@ -66,20 +70,33 @@ namespace OrderEntryMockingPracticeTests
         [TestInitialize]
         public void SetupProductsAndOrders()
         {
+            Random rand = new Random();
+            
             // Setup Mocked Interfaces
+
             _mockedProductRepo = new Mock<IProductRepository>();
             // Mocked product stock check returns true by default
             _mockedProductRepo.Setup(x => x.IsInStock(It.IsAny<string>())).Returns(true);
             // Mocked product stock check returns false if passed SkuOutOfStock
             _mockedProductRepo.Setup(x => x.IsInStock(SkuOutOfStock)).Returns(false);
+            
+            _mockedFulfillmentService = new Mock<IOrderFulfillmentService>();
+            // Mocked fulfillment service copies customer id from passed in order
+            _mockedFulfillmentService.Setup(x => x.Fulfill(It.IsAny<Order>()))
+                .Returns((Order a) => new OrderConfirmation
+                {
+                    OrderId = rand.Next(),
+                    CustomerId = a.CustomerId ?? rand.Next()
+                });
+               
 
-            _orderService = new OrderService(_mockedProductRepo.Object);
+            _orderService = new OrderService(_mockedProductRepo.Object, _mockedFulfillmentService.Object);
         }
        
         [TestMethod]
         public void NoExceptionIfOrderItemsHaveUniqueSkuAndInStock()
         {
-            Order order = CreateOrder(SkuUniqueOne, SkuUniqueTwo);
+            Order order = CreateOrder(customerId, SkuUniqueOne, SkuUniqueTwo);
             
             try
             {
@@ -94,7 +111,7 @@ namespace OrderEntryMockingPracticeTests
         [TestMethod]
         public void ExceptionIfOrderItemsHaveDuplicateSku()
         {
-            Order order = CreateOrder(SkuUniqueOne, SkuDuplicateOne);
+            Order order = CreateOrder(customerId, SkuUniqueOne, SkuDuplicateOne);
 
             try
             {
@@ -110,7 +127,7 @@ namespace OrderEntryMockingPracticeTests
         [TestMethod]
         public void ExceptionIfProductsNotInStock()
         {
-            Order order = CreateOrder(SkuOutOfStock, SkuUniqueOne);
+            Order order = CreateOrder(customerId, SkuOutOfStock, SkuUniqueOne);
 
             try
             {

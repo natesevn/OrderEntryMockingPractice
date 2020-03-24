@@ -9,15 +9,19 @@ namespace OrderEntryMockingPractice.Services
         public const string NoStockError = "One or more products not in stock.";
 
         private IProductRepository _productRepo;
+        private IOrderFulfillmentService _fulfillmentService;
 
-        public OrderService(IProductRepository productRepo)
+        public OrderService(
+            IProductRepository productRepo,
+            IOrderFulfillmentService fulfillmentService)
         {
             _productRepo = productRepo;
+            _fulfillmentService = fulfillmentService;
         }
 
         public OrderSummary PlaceOrder(Order order)
         {
-            // Validate order properties
+            // Check order properties
             if (order.HasNoDuplicateSku() == false)
             {
                 throw new ArgumentException(DuplicateSkuError);
@@ -31,9 +35,14 @@ namespace OrderEntryMockingPractice.Services
                 }
             }
 
+            // All checks pass, get confirmation properties
+            OrderConfirmation confirmation = _fulfillmentService.Fulfill(order);
             
+            // Create new summary with required information filled in
+            OrderSummary summary = new OrderSummary();
+            summary.OrderId = confirmation.OrderId;
 
-            return null;
+            return summary;
         }
     }
 }
