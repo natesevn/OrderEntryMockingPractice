@@ -20,9 +20,17 @@ namespace OrderEntryMockingPracticeTests
         private const string SkuOutOfStock = "outStock";
 
         private const int CustomerId = 1;
+        private const string PostalCode = "123";
+        private const string Country = "USA";
 
         private const int FulfillmentOrderId = 2;
         private const string FulfillmentConfirmationNumber = "abc";
+
+        private TaxEntry UsTax = new TaxEntry
+        {
+            Description = "federal",
+            Rate = 15
+        };
         
         // Mocked interfaces
         private Mock<IProductRepository> _mockedProductRepo;
@@ -95,16 +103,24 @@ namespace OrderEntryMockingPracticeTests
                 {
                     OrderNumber = FulfillmentConfirmationNumber,
                     OrderId = FulfillmentOrderId, 
-                    CustomerId = a.CustomerId ?? 1
+                    CustomerId = a.CustomerId ?? CustomerId
                 });
 
             _mockedCustomerRepo = new Mock<ICustomerRepository>();
-            _mockedCustomerRepo.Setup(x => x.Get(It.IsAny<int>()))
+            _mockedCustomerRepo.Setup(x => x.Get(It.Is<int>(id => id == CustomerId)))
                 .Returns((int id) => new Customer
                 {
                     CustomerId = id,
+                    PostalCode = PostalCode,
+                    Country = Country
                 });
-               
+
+            _mockedTaxService = new Mock<ITaxRateService>();
+            _mockedTaxService.Setup(x => x.GetTaxEntries(It.Is<string>(pc => pc == PostalCode), It.Is<string>(country => country == Country)))
+                .Returns(new List<TaxEntry>
+                {
+                    UsTax
+                });
 
             _orderService = new OrderService(_mockedProductRepo.Object, _mockedFulfillmentService.Object);
         }
@@ -171,6 +187,27 @@ namespace OrderEntryMockingPracticeTests
             {
                 OrderSummary summary = _orderService.PlaceOrder(order);
                 Assert.AreEqual(expectedNetTotal, summary.NetTotal, "Net total not calculated properly");
+            }
+            catch (ArgumentException ae)
+            {
+                Assert.Fail("Expected no exception but received: " + ae.Message);
+            }
+        }
+
+        [TestMethod]
+        public void CorrectOrderTotalCalculation()
+        {
+            Order order = CreateOrder(CustomerId,
+                SkuUniqueOne, SkuUniqueTwo,
+                10, 20, 2, 1);
+
+            decimal expectedNetTotal = (10 * 2) + (20 * 1);
+            decimal expectedOrderTotal = UsTax.Rate / 100 * expectedNetTotal;
+
+            try
+            {
+                OrderSummary summary = _orderService.PlaceOrder(order);
+                Assert.AreEqual(expectedOrderTotal, summary.Total, "Order total not calculated properly");
             }
             catch (ArgumentException ae)
             {

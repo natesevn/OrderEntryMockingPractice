@@ -46,6 +46,7 @@ namespace OrderEntryMockingPractice.Services
             OrderSummary summary = new OrderSummary();
 
             summary.OrderId = confirmation.OrderId;
+            summary.OrderNumber = confirmation.OrderNumber;
             summary.NetTotal = netTotal;
 
            
